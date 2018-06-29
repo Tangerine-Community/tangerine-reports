@@ -16,6 +16,9 @@ vim ./logstash/pipeline/logstash.conf
 cp sg_internal_users.yml_template elasticsearch/config/sg/sg_internal_users.yml
 vim elasticsearch/config/sg/sg_internal_users.yml
 
+# Add your static site for viewing reports.
+cp -r <path of your static site> www
+
 # Start the services.
 ./start.sh
 ```

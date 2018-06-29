@@ -1,2 +1,3 @@
 elasticsearch/config/sg/sg_internal_users.yml
 logstash/pipeline/logstash.conf
+www
