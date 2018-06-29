@@ -23,5 +23,5 @@ cp -r <path of your static site> www
 ./start.sh
 ```
 
-Go to http://<address of your host machine>:5900
+Go to http://address.of.your.host.machine:5900
 
