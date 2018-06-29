@@ -1,15 +1,232 @@
-input {
-	tcp {
-		port => 5000
-	}
+input { 
+    #logstash-input-couchdb_changes
+    couchdb_changes{ 
+        host => '...'
+        port => '5984'
+        db =>'...'
+        username =>'...'
+        password => '...'
+        keep_id => true
+        keep_revision => true
+        initial_sequence=>1
+     } 
+} 
+#filter section
+filter {
+
+  mutate {
+    convert => { "[doc][result_year]" => "string" }
+    convert => { "[doc][result_day]" => "string" }
+    add_field => { "month_val" => "" }
+    add_field => { "questions_from_bottom" => "" }
+  }
+
+  if [doc][processed_results] {
+    ruby {
+      code => "
+        begin
+          keys = event.get('[doc][processed_results]')
+          keys.each{ |key, val|
+            if ( key =~ /\./ )
+              position = (key =~ /\./)
+              newkey = key[position + 1, key.length]
+              if ( key =~ /longitude/ )
+                event.set('[geoip.location][lon]',val)
+              elsif ( key =~ /latitude/ )
+                event.set('[geoip.location][lat]',val)
+              elsif ( key =~ /fullName/)
+                event.set(newkey,val.split(' ').map {|jina| jina.capitalize}.join(' '))
+              elsif ( key =~/cd_teacher_name/)
+                event.set(newkey, val.to_i)
+              elsif ( key =~/cd_girlsenrolled/)
+                event.set(newkey, val.to_i)
+              elsif ( key =~/cd_boysenrolled/)
+                event.set(newkey, val.to_i)
+              elsif (key =~/cd_girlspresent/)
+                event.set(newkey, val.to_i)
+              elsif (key =~/cd_boyspresent/)
+                event.set(newkey, val.to_i)
+              elsif (key =~/month/)
+                event.set(newkey, val.capitalize)
+                if (val.capitalize == 'Jan')
+                  event.set('month_val','01')
+                elsif (val.capitalize == 'Feb')
+                  event.set('month_val','02')
+                elsif (val.capitalize == 'Mar')
+                  event.set('month_val','03')
+                elsif (val.capitalize == 'Apr')
+                  event.set('month_val','04')
+                elsif (val.capitalize == 'May')
+                  event.set('month_val','05')
+                elsif (val.capitalize == 'Jun')
+                  event.set('month_val','06')
+                elsif (val.capitalize == 'Jul')
+                  event.set('month_val','07')
+                elsif (val.capitalize == 'Aug')
+                  event.set('month_val','08')
+                elsif (val.capitalize == 'Sep')
+                  event.set('month_val','09')
+                elsif (val.capitalize == 'Oct')
+                  event.set('month_val','10')
+                elsif (val.capitalize == 'Nov')
+                  event.set('month_val','11')
+                elsif (val.capitalize == 'Dec')
+                  event.set('month_val','12')
+                else
+                end
+              elsif (key =~/result_day/)
+                event.set(newkey, val.to_s.rjust(2,'0'))
+              elsif (key =~/day/)
+		event.set(newkey, val.to_s.rjust(2,'0'))
+              elsif (key =~/co_positive_language/)
+                if (val == '1')
+                  event.set(newkey, 'Yes')
+                  event.set('questions_from_bottom','Uses positive language, with praise exceeding reprimand')
+                elsif (val == '0')
+                  event.set(newkey, 'No')
+                  event.set('questions_from_bottom','Does NOT use positive language, with praise exceeding reprimand')
+                else
+                  event.set(newkey,val)
+                end
+              elsif (key =~/co_use_aid/)
+                if (val == '1')
+                  event.set('questions_from_bottom','Uses a teaching aid (other than textbook or blackboard)')
+                  event.set(newkey, 'Yes')
+                elsif (val == '0')
+                  event.set('questions_from_bottom','Does NOT use a teaching aid (other than textbook or blackboard)')
+                  event.set(newkey, 'No')
+                else
+                  event.set(newkey,val)
+                end
+              elsif (key =~/co_organize/)
+                if (val == '1')
+                  event.set('questions_from_bottom','Organizes the students in different ways during the lesson')
+                  event.set(newkey, 'Yes')
+                elsif (val == '0')
+                  event.set('questions_from_bottom','Does NOT organizes the students in different ways during the lesson')
+                  event.set(newkey, 'No')
+                else
+                  event.set(newkey,val)
+                end
+              elsif (key =~/co_encourage/)
+                if (val == '1')
+                  event.set('questions_from_bottom','Encourages all students to take part in the lesson')
+                  event.set(newkey, 'Yes')
+                elsif (val == '0')
+                  event.set('questions_from_bottom','Does NOT ecourage all students to take part in the lesson')
+                  event.set(newkey, 'No')
+                else
+                  event.set(newkey,val)
+                end
+              elsif (key =~/co_mult_assess/)
+                if (val == '1')
+                  event.set('questions_from_bottom','Uses more than one method of assessing learning')
+                  event.set(newkey, 'Yes')
+                elsif (val == '0')
+                  event.set('questions_from_bottom','Does NOT use more than one method of assessing learning')
+                  event.set(newkey, 'No')
+                else
+                  event.set(newkey,val)
+                end
+              elsif (key =~/co_content_know/)
+                if (val == '1')
+                  event.set('questions_from_bottom','Knows the content that the students were taught during the lesson')
+                  event.set(newkey, 'Yes')
+                elsif (val == '0')
+                  event.set('questions_from_bottom','Does NOT know the content that the students were taught during the lesson')
+                  event.set(newkey, 'No')
+                else
+                  event.set(newkey,val)
+                end
+              elsif (key =~/cd_class/)
+                if (val == '1')
+                  event.set(newkey, '1 - JSS1')
+                elsif( val == '2')
+                  event.set(newkey, '2 - JSS2')
+                elsif( val == '3')
+                  event.set(newkey, '3 - JSS3')
+                elsif( val == '4')
+                  event.set(newkey, '4 - SS1')
+                elsif( val == '5')
+                  event.set(newkey, '5 - SS2')
+                elsif( val == '6')
+                  event.set(newkey, '6 - SS3')
+                else
+                  event.set(newkey,val)
+                end
+              elsif(key =~/cd_subject/)
+                if (val == 'math')
+                  event.set(newkey, 'Mathematics')
+                elsif (val == 'english')
+                  event.set(newkey, 'English')
+                else
+                  event.set(newkey,val)
+                end
+              elsif(key =~/cd_term/)
+                if (val == '1')
+                  event.set(newkey, 'Term 1')
+                elsif( val == '2')
+                  event.set(newkey, 'Term 2')
+                elsif( val == '3')
+                  event.set(newkey, 'Term 3')
+                else
+                  event.set(newkey,val)
+                end
+              elsif (key =~/co_lpm_present/)
+                if (val == '1')
+                  event.set(newkey,'Yes')
+                elsif( val == '0')
+                  event.set(newkey, 'No')
+                else
+                end
+              elsif (key =~/co_lpm_follow/)
+                if (val == '1')
+                  event.set(newkey, '1 - not using LPM')
+                elsif( val == '2')
+                  event.set(newkey, '2 - following LPM loosely')
+                elsif( val == '3')
+                  event.set(newkey, '3 - following all parts of the LPM')
+                elsif( val == '4')
+                  event.set(newkey, '4 - following all parts of the LPM and prepared in advance')
+                else
+                end
+              else
+                event.set(newkey,val )
+              end
+            else
+                event.set(key,val)
+            end
+          }
+        rescue Exception => e
+          event.set('logstash_ruby_exception', 'Ruby filtering Error: ' + e.message)
+        end
+      "
+    }
+  }
+
+  if [doc] {
+    mutate { 
+        remove_field => [ "[doc][processed_results]" ] 
+        remove_field => [ "[doc][column_headers]" ]
+    }
+  }
+  #fields to use for Total computations and percentages.
+  if [isValid]{
+    mutate{
+      add_field => {"valid_count" => 1 }
+    }
+  }
 }
 
-## Add your filters / logstash plugins configuration here
+output { 
+    #logstash-output-elasticsearch
+    elasticsearch { 
+        action => "index" 
+        hosts => "127.0.0.1:9200"
+        document_id =>"%{[doc][_id]}"
+        } 
+stdout { 
+    codec => rubydebug 
+    } 
+ }
 
-output {
-	elasticsearch {
-		hosts => "elasticsearch:9200"
-		user => logstash
-		password => logstash
-	}
-}
