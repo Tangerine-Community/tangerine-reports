@@ -23,5 +23,8 @@ cp -r <path of your static site> www
 ./start.sh
 ```
 
-Go to http://<address of your host machine>:5601
+Go to `http://<address of your host machine>:5601`
+
+## Credits
+Some provisioning scripts based on https://github.com/deviantony/docker-elk/tree/searchguard
 
