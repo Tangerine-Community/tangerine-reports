@@ -1,6 +1,6 @@
 # tangerine-reports
 
-# Install, configure, and start
+## Install, configure, and start
 Prereqs: Docker, Docker Compose
 
 ```
@@ -24,6 +24,12 @@ cp -r <path of your static site> www
 ```
 
 Go to `http://<address of your host machine>:5601`
+
+## Stop services
+```
+cd tangerine-reports
+docker-compose down
+```
 
 ## Credits
 Some provisioning scripts based on https://github.com/deviantony/docker-elk/tree/searchguard
